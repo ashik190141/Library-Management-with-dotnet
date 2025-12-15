@@ -19,9 +19,7 @@ public class Book
     public BookStatus Status {get; set;} = BookStatus.Available;
     public int CreatedBy { get; set; } 
     public int UpdatedBy { get; set; }
-    [Timestamp]
     public DateTime CreatedAt { get; set; } = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
-    [Timestamp]
     public DateTime UpdatedAt { get; set; } = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
 }
 
