@@ -1,19 +1,18 @@
 using Library_Management.Data;
 
-namespace Library_Management.Repositories
+namespace Library_Management.Repositories;
+
+public class BaseRepository
 {
-    public class BaseRepository
+    protected readonly LibraryContext _context;
+
+    protected BaseRepository(LibraryContext context)
     {
-        protected readonly LibraryContext _context;
+        _context = context;
+    }
 
-        protected BaseRepository(LibraryContext context)
-        {
-            _context = context;
-        }
-
-        protected async Task<int> SaveChangesAsync()
-        {
-            return await _context.SaveChangesAsync();
-        }
+    protected async Task<int> SaveChangesAsync()
+    {
+        return await _context.SaveChangesAsync();
     }
 }
