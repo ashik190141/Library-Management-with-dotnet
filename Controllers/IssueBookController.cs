@@ -28,4 +28,11 @@ public class IssueBookController : ControllerBase
         var response = await _issueBookService.GetAllIssueBooksAsync();
         return Ok(response);
     }
+
+    [HttpPost("return")]
+    public async Task<IActionResult> ReturnIssueBook([FromBody] ReturnBookDto returnBookDto)
+    {
+        var response = await _issueBookService.ReturnBookAsync(returnBookDto);
+        return Ok(response);
+    }
 }

@@ -74,13 +74,63 @@ namespace Library_Management.Services
             catch
             {
                 await transaction.RollbackAsync();
-                throw;
+                return new StandardApiResponse<IssueBook>(false, "Internal Server Error", null);
             }
         }
 
         public async Task<StandardApiResponse<IEnumerable<IssueBook>>> GetAllIssueBooksAsync()
         {
             return new StandardApiResponse<IEnumerable<IssueBook>>(true, "Issue Books fetched successfully", await _issueBookRepository.GetAllIssueBooksAsync());
+        }
+
+        public async Task<StandardApiResponse<IssueBook>> ReturnBookAsync(ReturnBookDto returnBookDto)
+        {
+            var issueBook = await _issueBookRepository.GetIssueBookAsync(returnBookDto.UserId, returnBookDto.BookId);
+            if (issueBook == null)
+            {
+                return new StandardApiResponse<IssueBook>(false, "No issued book found for this user and book", null);
+            }
+
+            var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                returnBookDto.UpdatedBy = 1;
+                returnBookDto.Status = IssueBookStatus.Returned;
+
+                if(issueBook.ExpireDate < returnBookDto.ReturnDate)
+                {
+                    int daysLate = (returnBookDto.ReturnDate - issueBook.ExpireDate).Days;
+                    returnBookDto.Penalty = daysLate * 5;
+                }
+
+                var issuedBook = await _bookRepository.GetBookByIdAsync(returnBookDto.BookId);
+                if (issuedBook != null)
+                {
+                    var updateBookDto = new UpdateBookDto
+                    {
+                        BookCopies = issuedBook.BookCopies + 1,
+                        Status = BookStatus.Available
+                    };
+                    await _bookRepository.UpdateBookAsync(issueBook.BookId, updateBookDto, issuedBook);
+                }
+
+                var updatedIssueBook = await _issueBookRepository.ReturnBookAsync(returnBookDto, issueBook);
+                if (updatedIssueBook != null)
+                {
+                    await transaction.CommitAsync();
+                    return new StandardApiResponse<IssueBook>(true, "Book Return successfully", issueBook);
+                }
+                else
+                {
+                    await transaction.RollbackAsync();
+                    return new StandardApiResponse<IssueBook>(false, "Failed to Return book", null);
+                }
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                return new StandardApiResponse<IssueBook>(false, "Internal Server Error", null);
+            }
         }
     }
 }
